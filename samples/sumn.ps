@@ -1,0 +1,16 @@
+%
+% Somme de 0 à N
+%
+
+/sum { 
+  dup
+  0 ne
+  {
+    dup dup 1 sub { 1 sub dup 3 1 roll add exch } repeat pop
+  } if
+} def
+
+0 sum = % Integer(0)
+1 sum = % Integer(1)
+10 sum =  % Integer(55)
+15 sum = % Integer(120)
