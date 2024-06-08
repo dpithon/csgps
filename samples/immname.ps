@@ -10,3 +10,10 @@ do2 =
 
 do1 =
 do2 =
+
+/add_two { 2 add } def
+
+clear
+/add_four { //add_two exec //add_two exec } def
+/add_two { 42 add } def
+10 add_four =

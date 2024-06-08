@@ -15,10 +15,16 @@ use logos::Logos;
 pub enum Token {
     #[token(r"=")]
     PopAndPrint,
+    #[token(r"stack")]
+    Stack,
     #[regex(r"[-+]?[0-9]+", |lex| lex.slice().parse().ok())]
     Integer(i64),
     #[regex(r"true|false", |lex| lex.slice() == "true")]
     Bool(bool),
+    #[token(r"counttomark")]
+    CountToMark,
+    #[token(r"cleartomark")]
+    ClearToMark,
     #[token(r"clear")]
     Clear,
     #[token(r"roll")]
@@ -51,6 +57,8 @@ pub enum Token {
     // Undef,
     // #[token(r"for")]
     // For,
+    #[token(r"exec")]
+    Exec,
     #[token(r"repeat")]
     Repeat,
     #[token(r"ifelse")]
@@ -58,6 +66,7 @@ pub enum Token {
     #[token(r"if")]
     If,
     #[regex(r"[\[{]|<<")]
+    #[token(r"mark")]
     Mark,
     #[token(r"]")]
     Array,
@@ -164,7 +173,7 @@ impl Display for Item {
             Self::ExeName(n) => write!(f, "ExeName({n})"),
             Self::Integer(i) => write!(f, "Integer({i})"),
             Self::Bool(b) => write!(f, "Bool({b})"),
-            Self::Mark => write!(f, "Mark!??"),
+            Self::Mark => write!(f, "Mark"),
             Self::Builtin(builtin) => write!(f, "{:?}", builtin),
             Self::Array(a) => {
                 write!(f, "Array[")?;
@@ -190,6 +199,7 @@ enum Builtin {
     Clear,
     Def,
     Div,
+    Exec,
     PopAndPrint,
     Dup,
     Eq,
@@ -210,9 +220,12 @@ enum Action {
     Push(Item),
     PushImmName(String),
     ExecBuiltin(Builtin),
+    ClearToMark,
+    CountToMark,
     ExecName(String),
     MakeArray,
     MakeProc,
+    Stack,
 }
 
 fn get_action(token: &Token) -> Action {
@@ -221,8 +234,11 @@ fn get_action(token: &Token) -> Action {
         Token::Array => Action::MakeArray,
         Token::Bool(b) => Action::Push(Item::Bool(*b)),
         Token::Clear => Action::ExecBuiltin(Builtin::Clear),
+        Token::ClearToMark => Action::ClearToMark,
+        Token::CountToMark => Action::CountToMark,
         Token::Def => Action::ExecBuiltin(Builtin::Def),
         Token::Div => Action::ExecBuiltin(Builtin::Div),
+        Token::Exec => Action::ExecBuiltin(Builtin::Exec),
         Token::PopAndPrint => Action::ExecBuiltin(Builtin::PopAndPrint),
         Token::Dup => Action::ExecBuiltin(Builtin::Dup),
         Token::Eq => Action::ExecBuiltin(Builtin::Eq),
@@ -243,6 +259,7 @@ fn get_action(token: &Token) -> Action {
         Token::Repeat => Action::ExecBuiltin(Builtin::Repeat),
         Token::Roll => Action::ExecBuiltin(Builtin::Roll),
         Token::Sub => Action::ExecBuiltin(Builtin::Sub),
+        Token::Stack => Action::Stack,
     }
 }
 
@@ -288,6 +305,22 @@ fn roll(stack: &mut Vec<Item>) -> Result<(), String> {
 fn pop(stack: &mut Vec<Item>) -> Result<(), String> {
     match stack.pop() {
         Some(_) => Ok(()),
+        None => Err("'pop' stack underflow".to_string()),
+    }
+}
+
+fn exec(stack: &mut Vec<Item>, execution_stack: &mut ExecutionStack) -> Result<(), String> {
+    match stack.pop() {
+        Some(Item::Proc(p)) => {
+            for proc_item in p.iter().rev() {
+                execution_stack.push(proc_item.clone())
+            }
+            Ok(())
+        }
+        Some(i) => {
+            stack.push(i);
+            Ok(())
+        }
         None => Err("'pop' stack underflow".to_string()),
     }
 }
@@ -412,9 +445,47 @@ fn pop_and_print(stack: &mut Vec<Item>) -> Result<(), String> {
     }
 }
 
+fn print_stack(stack: &mut Vec<Item>) -> Result<(), String> {
+    for item in stack.iter() {
+        print!("{item} ")
+    }
+    println!("---");
+    Ok(())
+}
+
 fn clear(stack: &mut Vec<Item>) -> Result<(), String> {
     stack.clear();
     Ok(())
+}
+
+fn clear_to_mark(stack: &mut Vec<Item>) -> Result<(), String> {
+    loop {
+        match stack.pop() {
+            Some(Item::Mark) => return Ok(()),
+            Some(_) => (),
+            None => return Err("'cleartomark' Mark not found".to_string()),
+        }
+    }
+}
+
+fn count_to_mark(stack: &mut Vec<Item>) -> Result<(), String> {
+    let mut count = 0;
+    let mut found = false;
+    for item in stack.iter().rev() {
+        match item {
+            Item::Mark => {
+                found = true;
+                break;
+            }
+            _ => count += 1,
+        }
+    }
+    if found {
+        stack.push(Item::Integer(count));
+        Ok(())
+    } else {
+        Err("'counttomark' Mark not found".to_string())
+    }
 }
 
 fn make_array(stack: &mut Vec<Item>) -> Result<(), String> {
@@ -565,6 +636,7 @@ fn execute(filename: &str) -> Result<(), String> {
                 Builtin::Clear => clear(&mut stack),
                 Builtin::Def => def(&mut stack, &mut dict_stack),
                 Builtin::Div => div(&mut stack),
+                Builtin::Exec => exec(&mut stack, &mut execution_stack),
                 Builtin::PopAndPrint => pop_and_print(&mut stack),
                 Builtin::Dup => dup(&mut stack),
                 Builtin::Eq => eq(&mut stack),
@@ -580,7 +652,13 @@ fn execute(filename: &str) -> Result<(), String> {
                 Builtin::Roll => roll(&mut stack),
                 Builtin::Sub => sub(&mut stack),
             }?,
+            Action::Stack => print_stack(&mut stack)?,
             Action::ExecBuiltin(builtin) => stack.push(Item::Builtin(builtin)),
+            Action::CountToMark => count_to_mark(&mut stack)?,
+            Action::ClearToMark => {
+                clear_to_mark(&mut stack)?;
+                collect_level -= 1;
+            }
             Action::MakeArray => {
                 make_array(&mut stack)?;
                 collect_level -= 1;
