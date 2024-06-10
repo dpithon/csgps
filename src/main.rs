@@ -27,6 +27,10 @@ pub enum Token {
     ClearToMark,
     #[token(r"clear")]
     Clear,
+    #[token(r"copy")]
+    Copy,
+    #[token(r"index")]
+    Index,
     #[token(r"roll")]
     Roll,
     #[token(r"dup")]
@@ -197,6 +201,8 @@ impl Display for Item {
 enum Builtin {
     Add,
     Clear,
+    Copy,
+    Index,
     Def,
     Div,
     Exec,
@@ -233,6 +239,8 @@ fn get_action(token: &Token) -> Action {
         Token::Add => Action::ExecBuiltin(Builtin::Add),
         Token::Array => Action::MakeArray,
         Token::Bool(b) => Action::Push(Item::Bool(*b)),
+        Token::Copy => Action::ExecBuiltin(Builtin::Copy),
+        Token::Index => Action::ExecBuiltin(Builtin::Index),
         Token::Clear => Action::ExecBuiltin(Builtin::Clear),
         Token::ClearToMark => Action::ClearToMark,
         Token::CountToMark => Action::CountToMark,
@@ -298,7 +306,47 @@ fn roll(stack: &mut Vec<Item>) -> Result<(), String> {
             }
         }
         (Some(_), Some(_)) => Err("'roll', type mismatch".to_string()),
-        (None, _) | (_, None) => Err("stack underflow".to_string()),
+        (None, _) | (_, None) => Err("'roll' stack underflow".to_string()),
+    }
+}
+
+fn copy(stack: &mut Vec<Item>) -> Result<(), String> {
+    match stack.pop() {
+        Some(Item::Integer(n)) => {
+            let (len, unsigned_n) = (stack.len(), n as usize);
+            if n < 0 {
+                Err("'copy' negative copy range".to_string())
+            } else if len < unsigned_n {
+                Err("'copy' stack too short".to_string())
+            } else {
+                let index = len - unsigned_n;
+                let tops: Vec<Item> = Vec::from(&stack[index..]);
+                stack.extend(tops);
+                Ok(())
+            }
+        }
+        Some(_) => Err("'copy', type mismatch".to_string()),
+        None => Err("'copy' stack underflow".to_string()),
+    }
+}
+
+fn index(stack: &mut Vec<Item>) -> Result<(), String> {
+    match stack.pop() {
+        Some(Item::Integer(n)) => {
+            let (len, unsigned_n) = (stack.len(), n as usize);
+            if n < 0 {
+                Err("'index' negative index".to_string())
+            } else if len <= unsigned_n {
+                Err("'index' stack too short".to_string())
+            } else {
+                let index = len - unsigned_n - 1;
+                let element: Item = stack[index].clone();
+                stack.push(element);
+                Ok(())
+            }
+        }
+        Some(_) => Err("'copy', type mismatch".to_string()),
+        None => Err("'copy' stack underflow".to_string()),
     }
 }
 
@@ -634,6 +682,8 @@ fn execute(filename: &str) -> Result<(), String> {
             Action::ExecBuiltin(builtin) if collect_level == 0 => match builtin {
                 Builtin::Add => add(&mut stack),
                 Builtin::Clear => clear(&mut stack),
+                Builtin::Copy => copy(&mut stack),
+                Builtin::Index => index(&mut stack),
                 Builtin::Def => def(&mut stack, &mut dict_stack),
                 Builtin::Div => div(&mut stack),
                 Builtin::Exec => exec(&mut stack, &mut execution_stack),
