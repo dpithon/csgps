@@ -5,8 +5,6 @@ use std::io::prelude::*;
 // TODO: complete "wrong argument types {:?} ..." messages
 // TODO: Stop on error
 
-use logos::Logos;
-
 mod builtin;
 mod dstack;
 mod item;
@@ -18,6 +16,8 @@ use dstack::DictStack;
 use item::Item;
 use stack::Stack;
 use xstack::ExecutionStack;
+
+use logos::Logos;
 
 #[derive(Logos, Debug, PartialEq, Clone)]
 #[logos(skip r"[ \t\n\f]+")]
