@@ -1,10 +1,11 @@
 use crate::{Action, Item};
 
-pub struct ExecutionStack {
+#[derive(Default)]
+pub struct ExecStack {
     stack: Vec<Action>,
 }
 
-impl ExecutionStack {
+impl ExecStack {
     pub fn new() -> Self {
         Self { stack: Vec::new() }
     }

@@ -5,6 +5,14 @@ pub struct DictStack {
     stack: Vec<HashMap<String, Item>>,
 }
 
+impl Default for DictStack {
+    fn default() -> Self {
+        let mut ds = DictStack { stack: Vec::new() };
+        ds.stack.push(HashMap::new());
+        ds
+    }
+}
+
 impl DictStack {
     pub fn new() -> Self {
         let mut ds = DictStack { stack: Vec::new() };
@@ -20,9 +28,10 @@ impl DictStack {
 
     pub fn get(&self, key: &str) -> Option<Item> {
         let top = self.stack.last().unwrap();
-        match top.get(key) {
-            None => None,
-            Some(item) => Some(item.clone()),
-        }
+        top.get(key).cloned()
+        // match top.get(key) {
+        //     None => None,
+        //     Some(item) => Some(item.clone()),
+        // }
     }
 }
