@@ -8,16 +8,38 @@ use csgsl::{get_action, Token};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
+    let interactive = args.len() == 2 && args[1] == "-i";
+    let mut engine = Engine::new();
+
     for filename in args[1..].iter() {
-        if let Err(e) = execute_file(filename) {
-            println!("error in {filename}: {e}");
-            break;
+        if filename == "-i" {
+            continue;
+        }
+
+        if let Err(e) = execute_file(&mut engine, filename) {
+            println!("Error in {filename}: {e}");
+            return;
+        }
+    }
+
+    if interactive {
+        let mut rl = rustyline::DefaultEditor::new().unwrap();
+        loop {
+            let readline = rl.readline(&format!("csg-PS [{}]> ", engine.get_stack_size()));
+            match readline {
+                Ok(line) => {
+                    if let Err(e) = execute_string(&mut engine, &line) {
+                        println!("Error : {e}");
+                    }
+                }
+                Err(_) => break,
+            };
         }
     }
     println!("bye.");
 }
 
-fn execute_file(filename: &str) -> Result<(), String> {
+fn execute_file(engine: &mut Engine, filename: &str) -> Result<(), String> {
     let mut file = match File::open(filename) {
         Err(e) => return Err(format!("error on opening {filename}: {e}")),
         Ok(file) => file,
@@ -28,12 +50,11 @@ fn execute_file(filename: &str) -> Result<(), String> {
         return Err(format!("error on loading {filename}: {e}"));
     }
 
-    execute_string(&contents)
+    execute_string(engine, &contents)
 }
 
-fn execute_string(contents: &str) -> Result<(), String> {
+fn execute_string(engine: &mut Engine, contents: &str) -> Result<(), String> {
     let mut lex = Token::lexer(contents);
-    let mut engine = Engine::new();
 
     loop {
         engine.process_execution_stack()?;

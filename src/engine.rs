@@ -34,6 +34,10 @@ impl Engine {
         }
     }
 
+    pub fn get_stack_size(&self) -> usize {
+        self.main_stack.len()
+    }
+
     pub fn process_execution_stack(&mut self) -> Result<(), String> {
         while self.exec_stack.is_runnable() {
             let action = self.exec_stack.get_action();
