@@ -117,7 +117,7 @@ impl Engine {
                     }
                     Ok(())
                 } else {
-                    Err("ExeName '{n}' not found".to_string())
+                    Err(format!("ExeName '{n}' not found"))
                 }
             }
             Action::ExecName(n) => {

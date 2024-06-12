@@ -8,11 +8,12 @@ use csgsl::{get_action, Token};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let interactive = args.len() == 2 && args[1] == "-i";
+    let mut interactive = false;
     let mut engine = Engine::new();
 
     for filename in args[1..].iter() {
         if filename == "-i" {
+            interactive = true;
             continue;
         }
 
