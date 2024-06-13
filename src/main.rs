@@ -24,20 +24,24 @@ fn main() {
     }
 
     if interactive {
-        let mut rl = rustyline::DefaultEditor::new().unwrap();
-        loop {
-            let readline = rl.readline(&format!("csg-PS [{}]> ", engine.get_stack_size()));
-            match readline {
-                Ok(line) => {
-                    if let Err(e) = execute_string(&mut engine, &line) {
-                        println!("Error : {e}");
-                    }
-                }
-                Err(_) => break,
-            };
-        }
+        repl(&mut engine);
     }
     println!("bye.");
+}
+
+fn repl(engine: &mut Engine) {
+    let mut rl = rustyline::DefaultEditor::new().unwrap();
+    loop {
+        let readline = rl.readline(&format!("csg-PS [{}]> ", engine.get_stack_size()));
+        match readline {
+            Ok(line) => {
+                if let Err(e) = execute_string(engine, &line) {
+                    println!("Error : {e}");
+                }
+            }
+            Err(_) => break,
+        };
+    }
 }
 
 fn execute_file(engine: &mut Engine, filename: &str) -> Result<(), String> {
