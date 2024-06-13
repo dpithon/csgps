@@ -2,7 +2,7 @@
 % Somme de 0 à N
 %
 
-/sum { 
+/sum1 { 
   dup
   0 ne
   {
@@ -10,7 +10,17 @@
   } if
 } def
 
-0 sum = % Integer(0)
-1 sum = % Integer(1)
-10 sum =  % Integer(55)
-15 sum = % Integer(120)
+/sum2 {
+  dup 1 add mul 2 div
+} def
+
+0 sum1 =
+0 sum2 =
+1 sum1 =
+1 sum2 =
+10 sum1 =
+10 sum2 =
+15 sum1 =
+15 sum2 =
+1627 sum1 =
+1627 sum2 =
