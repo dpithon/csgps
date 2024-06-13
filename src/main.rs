@@ -1,10 +1,5 @@
-use logos::Logos;
-use std::env;
-use std::fs::File;
-use std::io::prelude::*;
-
 use csgsl::Engine;
-use csgsl::{get_action, Token};
+use std::env;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -17,57 +12,14 @@ fn main() {
             continue;
         }
 
-        if let Err(e) = execute_file(&mut engine, filename) {
+        if let Err(e) = engine.execute_file(filename) {
             println!("Error in {filename}: {e}");
             return;
         }
     }
 
     if interactive {
-        repl(&mut engine);
+        engine.enter_repl();
     }
     println!("bye.");
-}
-
-fn repl(engine: &mut Engine) {
-    let mut rl = rustyline::DefaultEditor::new().unwrap();
-    loop {
-        let readline = rl.readline(&format!("csg-PS [{}]> ", engine.get_stack_size()));
-        match readline {
-            Ok(line) => {
-                if let Err(e) = execute_string(engine, &line) {
-                    println!("Error : {e}");
-                }
-            }
-            Err(_) => break,
-        };
-    }
-}
-
-fn execute_file(engine: &mut Engine, filename: &str) -> Result<(), String> {
-    let mut file = match File::open(filename) {
-        Err(e) => return Err(format!("error on opening {filename}: {e}")),
-        Ok(file) => file,
-    };
-
-    let mut contents = String::new();
-    if let Err(e) = file.read_to_string(&mut contents) {
-        return Err(format!("error on loading {filename}: {e}"));
-    }
-
-    execute_string(engine, &contents)
-}
-
-fn execute_string(engine: &mut Engine, contents: &str) -> Result<(), String> {
-    let mut lex = Token::lexer(contents);
-
-    loop {
-        engine.process_execution_stack()?;
-
-        match lex.next() {
-            Some(Ok(token)) => engine.execute_action(get_action(&token))?,
-            Some(Err(_)) => return Err(format!("parse error: {}", lex.slice())),
-            None => return Ok(()),
-        };
-    }
 }

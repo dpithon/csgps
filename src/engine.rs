@@ -3,6 +3,12 @@ use crate::Builtin;
 use crate::DictStack;
 use crate::ExecStack;
 use crate::Item;
+use crate::{get_action, Token};
+
+use logos::Logos;
+
+use std::fs::File;
+use std::io::prelude::*;
 
 use std::cmp::Ordering;
 
@@ -44,6 +50,49 @@ impl Engine {
             self.execute_action(action)?;
         }
         Ok(())
+    }
+
+    pub fn execute_string(&mut self, contents: &str) -> Result<(), String> {
+        let mut lex = Token::lexer(contents);
+
+        loop {
+            self.process_execution_stack()?;
+
+            match lex.next() {
+                Some(Ok(token)) => self.execute_action(get_action(&token))?,
+                Some(Err(_)) => return Err(format!("parse error: {}", lex.slice())),
+                None => return Ok(()),
+            };
+        }
+    }
+
+    pub fn execute_file(&mut self, filename: &str) -> Result<(), String> {
+        let mut file = match File::open(filename) {
+            Err(e) => return Err(format!("error on opening {filename}: {e}")),
+            Ok(file) => file,
+        };
+
+        let mut contents = String::new();
+        if let Err(e) = file.read_to_string(&mut contents) {
+            return Err(format!("error on loading {filename}: {e}"));
+        }
+
+        self.execute_string(&contents)
+    }
+
+    pub fn enter_repl(&mut self) {
+        let mut rl = rustyline::DefaultEditor::new().unwrap();
+        loop {
+            let readline = rl.readline(&format!("csg-PS [{}]> ", self.get_stack_size()));
+            match readline {
+                Ok(line) => {
+                    if let Err(e) = self.execute_string(&line) {
+                        println!("Error : {e}");
+                    }
+                }
+                Err(_) => break,
+            };
+        }
     }
 
     pub fn execute_action(&mut self, action: Action) -> Result<(), String> {
