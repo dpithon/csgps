@@ -1,8 +1,8 @@
-use crate::{Action, Item};
+use crate::Object;
 
 #[derive(Default)]
 pub struct ExecStack {
-    stack: Vec<Action>,
+    stack: Vec<Object>,
 }
 
 impl ExecStack {
@@ -14,20 +14,11 @@ impl ExecStack {
         !self.stack.is_empty()
     }
 
-    pub fn get_action(&mut self) -> Action {
+    pub fn get_object(&mut self) -> Object {
         self.stack.pop().unwrap()
     }
 
-    pub fn push(&mut self, item: Item) {
-        match item {
-            Item::Bool(_) => self.stack.push(Action::Push(item)),
-            Item::Integer(_) => self.stack.push(Action::Push(item)),
-            Item::Builtin(b) => self.stack.push(Action::ExecBuiltin(b)),
-            Item::ExeName(e) => self.stack.push(Action::ExecName(e)),
-            Item::Array(a) => self.stack.push(Action::Push(Item::Array(a.clone()))),
-            Item::Proc(p) => self.stack.push(Action::Push(Item::Proc(p.clone()))),
-            Item::LitName(l) => self.stack.push(Action::Push(Item::LitName(l.clone()))),
-            _ => unimplemented!(),
-        }
+    pub fn push(&mut self, object: Object) {
+        self.stack.push(object);
     }
 }

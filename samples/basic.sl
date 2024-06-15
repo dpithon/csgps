@@ -2,13 +2,13 @@
 % Basic operations
 %
 
-1 2 add stack pop 
-42 6 div stack pop
-4 2 stack
-exch stack
+1 2 add pstack pop 
+42 6 div pstack pop
+4 2 pstack
+exch pstack
 dup dup
 div
 mod
-stack
+pstack
 
 
