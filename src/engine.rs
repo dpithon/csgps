@@ -69,6 +69,9 @@ impl Engine {
             match lex.next() {
                 Some(Ok(Token::BeginProc)) => self.proc_builder.open(),
                 Some(Ok(Token::EndProc)) => {
+                    if !self.proc_builder.is_open() {
+                        return Err("syntax error".to_string());
+                    }
                     if let Some(proc) = self.proc_builder.close() {
                         self.main_stack.push(proc);
                     }
@@ -158,17 +161,9 @@ impl Engine {
             Sub => self.sub(),
             Load => self.load(),
             Pstack => self.pstack(),
-            EndArray => {
-                if self.proc_builder.is_open() {
-                    self.proc_builder
-                        .push(Object::Operator(Executable, EndArray));
-                    Ok(())
-                } else {
-                    let array = self.build_array()?;
-                    self.main_stack.push(array);
-                    Ok(())
-                }
-            }
+            ClearToMark => self.clear_to_mark(),
+            CountToMark => self.count_to_mark(),
+            EndArray => self.endarray(),
         }
     }
 
@@ -226,6 +221,12 @@ impl Engine {
             }
             (None, _) | (_, None) => Err("'exch' stack underflow".to_string()),
         }
+    }
+
+    pub fn endarray(&mut self) -> Result<(), String> {
+        let array = self.build_array()?;
+        self.main_stack.push(array);
+        Ok(())
     }
 
     pub fn roll(&mut self) -> Result<(), String> {

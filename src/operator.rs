@@ -26,6 +26,8 @@ pub enum Op {
     Sub,
     EndArray, // ]
     Pstack,
+    ClearToMark,
+    CountToMark,
 }
 
 impl Display for Op {
@@ -55,6 +57,8 @@ impl Display for Op {
             Op::Sub => write!(f, "--sub--"),
             Op::EndArray => write!(f, "--]--"),
             Op::Pstack => write!(f, "--pstack--"),
+            Op::ClearToMark => write!(f, "--cleartomark--"),
+            Op::CountToMark => write!(f, "--counttomark--"),
         }
     }
 }

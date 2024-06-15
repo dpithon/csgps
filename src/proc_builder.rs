@@ -1,5 +1,5 @@
-use crate::ObjectMode;
 use crate::Object::{self, Array};
+use crate::ObjectMode;
 
 #[derive(Default)]
 pub struct ProcBuilder {
@@ -20,18 +20,19 @@ impl ProcBuilder {
     }
 
     pub fn close(&mut self) -> Option<Object> {
-        let proc = self.stack.pop().unwrap(); // TODO: unwrap ...
-        let object = Array(ObjectMode::Executable, proc);
+        if let Some(proc) = self.stack.pop() {
+            let object = Array(ObjectMode::Executable, proc);
 
-        if self.stack.is_empty() {
-            Some(object)
+            if self.stack.is_empty() {
+                Some(object)
+            } else {
+                self.stack.last_mut().unwrap().push(object);
+                None
+            }
         } else {
-            self.stack.last_mut().unwrap().push(object);
-            None
+            panic!("unmatched }}");
         }
     }
-
-    pub fn get_proc(&mut self) {}
 
     pub fn push(&mut self, object: Object) {
         self.stack.last_mut().unwrap().push(object);
