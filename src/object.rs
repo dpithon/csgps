@@ -2,7 +2,7 @@ use crate::Op;
 use std::fmt::Display;
 
 #[derive(Debug, Clone)]
-pub enum LitExe {
+pub enum ObjectMode {
     Literal,
     Executable,
 }
@@ -13,11 +13,11 @@ pub enum Object {
     Real(f64),
     Bool(bool),
     Mark,
-    Array(LitExe, Vec<Object>),
-    Name(LitExe, String),
-    Operator(LitExe, Op),
-    String(LitExe, String),
-    File(LitExe, String),
+    Array(ObjectMode, Vec<Object>),
+    Name(ObjectMode, String),
+    Operator(ObjectMode, Op),
+    String(ObjectMode, String),
+    File(ObjectMode, String),
 }
 
 impl Display for Object {

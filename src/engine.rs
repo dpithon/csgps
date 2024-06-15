@@ -1,7 +1,7 @@
 use crate::DictStack;
 use crate::ExecStack;
-use crate::LitExe;
 use crate::Object;
+use crate::ObjectMode::*;
 use crate::Op;
 use crate::ProcBuilder;
 use crate::Token;
@@ -45,8 +45,8 @@ impl Engine {
             Token::Bool(b) => Object::Bool(b),
             Token::Real(r) => Object::Real(r),
             Token::Integer(i) => Object::Integer(i),
-            Token::ExeName(n) => Object::Name(LitExe::Executable, n),
-            Token::LitName(n) => Object::Name(LitExe::Literal, n),
+            Token::ExeName(n) => Object::Name(Executable, n),
+            Token::LitName(n) => Object::Name(Literal, n),
             Token::Mark => Object::Mark,
             _ => panic!("Token not expected {:?}", token),
         }
@@ -61,20 +61,19 @@ impl Engine {
     }
 
     pub fn execute_string(&mut self, contents: &str) -> Result<(), String> {
-        use Token::*;
         let mut lex = Token::lexer(contents);
 
         loop {
             self.process_execution_stack()?;
 
             match lex.next() {
-                Some(Ok(BeginProc)) => self.proc_builder.open(),
-                Some(Ok(EndProc)) => {
+                Some(Ok(Token::BeginProc)) => self.proc_builder.open(),
+                Some(Ok(Token::EndProc)) => {
                     if let Some(proc) = self.proc_builder.close() {
                         self.main_stack.push(proc);
                     }
                 }
-                Some(Ok(ImmName(name))) => {
+                Some(Ok(Token::ImmName(name))) => {
                     let response = self.dict_stack.get(&name);
                     match response {
                         Some(object) => {
@@ -133,34 +132,36 @@ impl Engine {
     }
 
     pub fn run_operator(&mut self, op: Op) -> Result<(), String> {
+        use Op::*;
+
         match op {
-            Op::Add => self.add(),
-            Op::Clear => self.clear(),
-            Op::Copy => self.copy(),
-            Op::Index => self.index(),
-            Op::Def => self.def(),
-            Op::Div => self.div(),
-            Op::Exec => self.exec(),
-            Op::PopAndPrint => self.pop_and_print(),
-            Op::Dup => self.dup(),
-            Op::Eq => self.eq(),
-            Op::Ne => self.ne(),
-            Op::Exch => self.exch(),
-            Op::Gt => self.gt(),
-            Op::If => self.cond_if(),
-            Op::IfElse => self.cond_ifelse(),
-            Op::Mod => self.modulo(),
-            Op::Mul => self.mul(),
-            Op::Pop => self.pop(),
-            Op::Repeat => self.repeat(),
-            Op::Roll => self.roll(),
-            Op::Sub => self.sub(),
-            Op::Load => self.load(),
-            Op::Pstack => self.pstack(),
-            Op::EndArray => {
+            Add => self.add(),
+            Clear => self.clear(),
+            Copy => self.copy(),
+            Index => self.index(),
+            Def => self.def(),
+            Div => self.div(),
+            Exec => self.exec(),
+            PopAndPrint => self.pop_and_print(),
+            Dup => self.dup(),
+            Eq => self.eq(),
+            Ne => self.ne(),
+            Exch => self.exch(),
+            Gt => self.gt(),
+            If => self.cond_if(),
+            IfElse => self.cond_ifelse(),
+            Mod => self.modulo(),
+            Mul => self.mul(),
+            Pop => self.pop(),
+            Repeat => self.repeat(),
+            Roll => self.roll(),
+            Sub => self.sub(),
+            Load => self.load(),
+            Pstack => self.pstack(),
+            EndArray => {
                 if self.proc_builder.is_open() {
                     self.proc_builder
-                        .push(Object::Operator(LitExe::Executable, Op::EndArray));
+                        .push(Object::Operator(Executable, EndArray));
                     Ok(())
                 } else {
                     let array = self.build_array()?;
@@ -172,7 +173,6 @@ impl Engine {
     }
 
     pub fn process_object(&mut self, object: Object) -> Result<(), String> {
-        use LitExe::*;
         use Object::*;
 
         match object {
@@ -307,7 +307,7 @@ impl Engine {
 
     pub fn exec(&mut self) -> Result<(), String> {
         match self.main_stack.pop() {
-            Some(Object::Array(LitExe::Executable, p)) => {
+            Some(Object::Array(Executable, p)) => {
                 for proc_object in p.iter().rev() {
                     self.exec_stack.push(proc_object.clone())
                 }
@@ -474,7 +474,7 @@ impl Engine {
 
         while let Some(object) = self.main_stack.pop() {
             match object {
-                Object::Mark => return Ok(Object::Array(LitExe::Literal, array)),
+                Object::Mark => return Ok(Object::Array(Literal, array)),
                 object => array.insert(0, object),
             }
         }
@@ -485,7 +485,7 @@ impl Engine {
     pub fn def(&mut self) -> Result<(), String> {
         match (self.main_stack.pop(), self.main_stack.pop()) {
             (None, _) | (_, None) => Err("stack underflow".to_string()),
-            (Some(object), Some(Object::Name(LitExe::Literal, n))) => {
+            (Some(object), Some(Object::Name(Literal, n))) => {
                 self.dict_stack.def(n, object);
                 Ok(())
             }
@@ -495,7 +495,7 @@ impl Engine {
 
     pub fn load(&mut self) -> Result<(), String> {
         match self.main_stack.pop() {
-            Some(Object::Name(LitExe::Literal, name)) => {
+            Some(Object::Name(Literal, name)) => {
                 if let Some(object) = self.dict_stack.get(&name) {
                     self.main_stack.push(object);
                     Ok(())
@@ -509,7 +509,7 @@ impl Engine {
 
     pub fn cond_if(&mut self) -> Result<(), String> {
         match (self.main_stack.pop(), self.main_stack.pop()) {
-            (Some(Object::Array(LitExe::Executable, p)), Some(Object::Bool(b))) => {
+            (Some(Object::Array(Executable, p)), Some(Object::Bool(b))) => {
                 if b {
                     for proc_object in p.iter().rev() {
                         self.exec_stack.push(proc_object.clone())
@@ -529,8 +529,8 @@ impl Engine {
             self.main_stack.pop(),
         ) {
             (
-                Some(Object::Array(LitExe::Executable, pelse)),
-                Some(Object::Array(LitExe::Executable, pif)),
+                Some(Object::Array(Executable, pelse)),
+                Some(Object::Array(Executable, pif)),
                 Some(Object::Bool(b)),
             ) => {
                 if b {
@@ -556,12 +556,11 @@ impl Engine {
 
     pub fn repeat(&mut self) -> Result<(), String> {
         match (self.main_stack.pop(), self.main_stack.pop()) {
-            (Some(Object::Array(LitExe::Executable, p)), Some(Object::Integer(i))) => {
+            (Some(Object::Array(Executable, p)), Some(Object::Integer(i))) => {
                 if i > 1 {
                     self.exec_stack
-                        .push(Object::Operator(LitExe::Executable, Op::Repeat));
-                    self.exec_stack
-                        .push(Object::Array(LitExe::Executable, p.clone()));
+                        .push(Object::Operator(Executable, Op::Repeat));
+                    self.exec_stack.push(Object::Array(Executable, p.clone()));
                     self.exec_stack.push(Object::Integer(i - 1));
                 }
 

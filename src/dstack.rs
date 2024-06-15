@@ -1,4 +1,5 @@
-use crate::{LitExe, Object, Op};
+use crate::ObjectMode::*;
+use crate::{Object, Op};
 use std::collections::HashMap;
 
 pub struct DictStack {
@@ -6,30 +7,30 @@ pub struct DictStack {
 }
 
 const SYSTEMDICT: [(&str, Object); 24] = [
-    ("]", Object::Operator(LitExe::Executable, Op::EndArray)),
-    ("add", Object::Operator(LitExe::Executable, Op::Add)),
-    ("clear", Object::Operator(LitExe::Executable, Op::Clear)),
-    ("copy", Object::Operator(LitExe::Executable, Op::Copy)),
-    ("index", Object::Operator(LitExe::Executable, Op::Index)),
-    ("def", Object::Operator(LitExe::Executable, Op::Def)),
-    ("div", Object::Operator(LitExe::Executable, Op::Div)),
-    ("exec", Object::Operator(LitExe::Executable, Op::Exec)),
-    ("=", Object::Operator(LitExe::Executable, Op::PopAndPrint)),
-    ("dup", Object::Operator(LitExe::Executable, Op::Dup)),
-    ("eq", Object::Operator(LitExe::Executable, Op::Eq)),
-    ("ne", Object::Operator(LitExe::Executable, Op::Ne)),
-    ("exch", Object::Operator(LitExe::Executable, Op::Exch)),
-    ("gt", Object::Operator(LitExe::Executable, Op::Gt)),
-    ("if", Object::Operator(LitExe::Executable, Op::If)),
-    ("ifelse", Object::Operator(LitExe::Executable, Op::IfElse)),
-    ("mod", Object::Operator(LitExe::Executable, Op::Mod)),
-    ("mul", Object::Operator(LitExe::Executable, Op::Mul)),
-    ("pop", Object::Operator(LitExe::Executable, Op::Pop)),
-    ("repeat", Object::Operator(LitExe::Executable, Op::Repeat)),
-    ("roll", Object::Operator(LitExe::Executable, Op::Roll)),
-    ("sub", Object::Operator(LitExe::Executable, Op::Sub)),
-    ("load", Object::Operator(LitExe::Executable, Op::Load)),
-    ("pstack", Object::Operator(LitExe::Executable, Op::Pstack)),
+    ("]", Object::Operator(Executable, Op::EndArray)),
+    ("add", Object::Operator(Executable, Op::Add)),
+    ("clear", Object::Operator(Executable, Op::Clear)),
+    ("copy", Object::Operator(Executable, Op::Copy)),
+    ("index", Object::Operator(Executable, Op::Index)),
+    ("def", Object::Operator(Executable, Op::Def)),
+    ("div", Object::Operator(Executable, Op::Div)),
+    ("exec", Object::Operator(Executable, Op::Exec)),
+    ("=", Object::Operator(Executable, Op::PopAndPrint)),
+    ("dup", Object::Operator(Executable, Op::Dup)),
+    ("eq", Object::Operator(Executable, Op::Eq)),
+    ("ne", Object::Operator(Executable, Op::Ne)),
+    ("exch", Object::Operator(Executable, Op::Exch)),
+    ("gt", Object::Operator(Executable, Op::Gt)),
+    ("if", Object::Operator(Executable, Op::If)),
+    ("ifelse", Object::Operator(Executable, Op::IfElse)),
+    ("mod", Object::Operator(Executable, Op::Mod)),
+    ("mul", Object::Operator(Executable, Op::Mul)),
+    ("pop", Object::Operator(Executable, Op::Pop)),
+    ("repeat", Object::Operator(Executable, Op::Repeat)),
+    ("roll", Object::Operator(Executable, Op::Roll)),
+    ("sub", Object::Operator(Executable, Op::Sub)),
+    ("load", Object::Operator(Executable, Op::Load)),
+    ("pstack", Object::Operator(Executable, Op::Pstack)),
 ];
 
 impl Default for DictStack {

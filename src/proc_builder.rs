@@ -1,4 +1,4 @@
-use crate::LitExe;
+use crate::ObjectMode;
 use crate::Object::{self, Array};
 
 #[derive(Default)]
@@ -21,7 +21,7 @@ impl ProcBuilder {
 
     pub fn close(&mut self) -> Option<Object> {
         let proc = self.stack.pop().unwrap(); // TODO: unwrap ...
-        let object = Array(LitExe::Executable, proc);
+        let object = Array(ObjectMode::Executable, proc);
 
         if self.stack.is_empty() {
             Some(object)

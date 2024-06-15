@@ -8,7 +8,7 @@ mod xstack;
 
 pub use dstack::DictStack;
 pub use engine::Engine;
-pub use object::{LitExe, Object};
+pub use object::{ObjectMode, Object};
 pub use operator::Op;
 pub use proc_builder::ProcBuilder;
 pub use token::Token;
