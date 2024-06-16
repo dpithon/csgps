@@ -50,6 +50,7 @@ impl DictStack {
     }
 
     pub fn def(&mut self, key: String, val: Object) {
+        eprintln!("register {key}:{val}");
         let mut top = self.stack.pop().unwrap();
         top.insert(key, val);
         self.stack.push(top);

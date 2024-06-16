@@ -12,4 +12,4 @@ pub use object::{Object, ObjectMode, Operator};
 pub use proc_builder::ProcBuilder;
 pub use scanner::Scanner;
 pub use token::Token;
-pub use xstack::ExecStack;
+pub use xstack::{ExecStack, OnceRunner};

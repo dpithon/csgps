@@ -37,6 +37,7 @@ impl Scanner {
                         return Err("syntax error".to_string());
                     }
                     if let Some(proc) = self.proc_builder.close() {
+                        eprintln!("build proc");
                         self.engine.push(proc);
                     }
                 }
@@ -64,7 +65,9 @@ impl Scanner {
                     }
                 }
                 Some(Err(_)) => return Err(format!("parse error: {}", lex.slice())),
-                None => return Ok(()),
+                None => {
+                    return Ok(());
+                }
             };
         }
     }

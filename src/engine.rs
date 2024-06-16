@@ -1,7 +1,9 @@
+use crate::xstack::RepeatRunner;
 use crate::DictStack;
 use crate::ExecStack;
 use crate::Object;
 use crate::ObjectMode::*;
+use crate::OnceRunner;
 use crate::Operator;
 
 use std::cmp::Ordering;
@@ -32,6 +34,7 @@ impl Engine {
     }
 
     pub fn push(&mut self, object: Object) {
+        eprintln!("push {object}");
         self.main_stack.push(object)
     }
 
@@ -40,8 +43,7 @@ impl Engine {
     }
 
     pub fn process_execution_stack(&mut self) -> Result<(), String> {
-        while self.exec_stack.is_runnable() {
-            let object = self.exec_stack.get_object();
+        while let Some(object) = self.exec_stack.get_object() {
             self.process_object(object)?;
         }
         Ok(())
@@ -81,6 +83,7 @@ impl Engine {
     }
 
     pub fn process_object(&mut self, object: Object) -> Result<(), String> {
+        eprintln!("process_object: {object}");
         use Object::*;
 
         match object {
@@ -88,15 +91,13 @@ impl Engine {
                 if let Some(obj) = self.dict_stack.get(&name) {
                     match obj {
                         Array(Executable, proc) => {
-                            for proc_object in proc.iter().rev() {
-                                self.exec_stack.push(proc_object.clone()); // TODO: New Proc Struct
-                            }
+                            self.exec_stack.push(Box::new(OnceRunner::new(proc)));
                         }
                         Operator(Executable, op) => {
                             self.run_operator(op)?;
                         }
                         other => {
-                            self.exec_stack.push(other);
+                            self.exec_stack.push(Box::new(OnceRunner::new(vec![other])));
                         }
                     }
                 } else {
@@ -105,7 +106,7 @@ impl Engine {
             }
             Operator(Executable, op) => self.run_operator(op)?,
             other => {
-                self.main_stack.push(other.clone());
+                self.push(other.clone());
             }
         };
         Ok(())
@@ -219,9 +220,7 @@ impl Engine {
     pub fn exec(&mut self) -> Result<(), String> {
         match self.main_stack.pop() {
             Some(Object::Array(Executable, p)) => {
-                for proc_object in p.iter().rev() {
-                    self.exec_stack.push(proc_object.clone())
-                }
+                self.exec_stack.push(Box::new(OnceRunner::new(p)));
                 Ok(())
             }
             Some(o) => self.process_object(o),
@@ -340,7 +339,7 @@ impl Engine {
 
     pub fn pstack(&mut self) -> Result<(), String> {
         for object in self.main_stack.iter().rev() {
-            print!("{object} ")
+            println!("{object} ")
         }
         Ok(())
     }
@@ -419,16 +418,18 @@ impl Engine {
     }
 
     pub fn cond_if(&mut self) -> Result<(), String> {
+        eprintln!("enter cond_if");
         match (self.main_stack.pop(), self.main_stack.pop()) {
             (Some(Object::Array(Executable, p)), Some(Object::Bool(b))) => {
                 if b {
-                    for proc_object in p.iter().rev() {
-                        self.exec_stack.push(proc_object.clone())
-                    }
+                    self.exec_stack.push(Box::new(OnceRunner::new(p)));
                 }
                 Ok(())
             }
-            (Some(a), Some(b)) => Err(format!("'if' wrong argument types {:?} {:?}", a, b)),
+            (Some(a), Some(b)) => Err(format!(
+                "'if' wrong argument types {:?} {:?} {}",
+                a, b, self.exec_stack
+            )),
             (None, _) | (_, None) => Err("'if' stack underflow".to_string()),
         }
     }
@@ -445,13 +446,9 @@ impl Engine {
                 Some(Object::Bool(b)),
             ) => {
                 if b {
-                    for proc_object in pif.iter().rev() {
-                        self.exec_stack.push(proc_object.clone())
-                    }
+                    self.exec_stack.push(Box::new(OnceRunner::new(pif)));
                 } else {
-                    for proc_object in pelse.iter().rev() {
-                        self.exec_stack.push(proc_object.clone())
-                    }
+                    self.exec_stack.push(Box::new(OnceRunner::new(pelse)));
                 }
                 Ok(())
             }
@@ -467,18 +464,10 @@ impl Engine {
 
     pub fn repeat(&mut self) -> Result<(), String> {
         match (self.main_stack.pop(), self.main_stack.pop()) {
-            (Some(Object::Array(Executable, p)), Some(Object::Integer(i))) => {
-                if i > 1 {
-                    self.exec_stack
-                        .push(Object::Operator(Executable, Operator::Repeat));
-                    self.exec_stack.push(Object::Array(Executable, p.clone()));
-                    self.exec_stack.push(Object::Integer(i - 1));
+            (Some(Object::Array(Executable, p)), Some(Object::Integer(times))) => {
+                if times > 1 {
+                    self.exec_stack.push(Box::new(RepeatRunner::new(p, times)));
                 }
-
-                for proc_object in p.iter().rev() {
-                    self.exec_stack.push(proc_object.clone())
-                }
-
                 Ok(())
             }
             (Some(a), Some(b)) => Err(format!("'repeat' wrong argument types {:?} {:?}", a, b)),

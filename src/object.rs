@@ -19,6 +19,15 @@ pub enum ObjectMode {
     Executable,
 }
 
+impl Display for ObjectMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ObjectMode::Executable => write!(f, "Executable"),
+            ObjectMode::Literal => write!(f, "Literal"),
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub enum Operator {
     Add,
@@ -52,16 +61,16 @@ pub enum Operator {
 impl Display for Object {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Name(_, n) => write!(f, "Name({n})"),
+            Self::Name(m, n) => write!(f, "{m}:Name({n})"),
             Self::File(_, n) => write!(f, "File({n})"),
             Self::Integer(i) => write!(f, "Integer({i})"),
             Self::Real(r) => write!(f, "Real({r})"),
             Self::Bool(b) => write!(f, "Bool({b})"),
             Self::Mark => write!(f, "Mark"),
             Self::String(_, s) => write!(f, "{s}"),
-            Self::Operator(_, s) => write!(f, "{s}"),
-            Self::Array(_, a) => {
-                write!(f, "[")?;
+            Self::Operator(m, s) => write!(f, "{m}:{s}"),
+            Self::Array(m, a) => {
+                write!(f, "{m}:[")?;
                 for object in a.iter() {
                     write!(f, "{object},")?;
                 }
