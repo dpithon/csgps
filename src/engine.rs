@@ -2,7 +2,7 @@ use crate::DictStack;
 use crate::ExecStack;
 use crate::Object;
 use crate::ObjectMode::*;
-use crate::Op;
+use crate::Operator;
 
 use std::cmp::Ordering;
 
@@ -47,8 +47,8 @@ impl Engine {
         Ok(())
     }
 
-    pub fn run_operator(&mut self, op: Op) -> Result<(), String> {
-        use Op::*;
+    pub fn run_operator(&mut self, op: Operator) -> Result<(), String> {
+        use Operator::*;
 
         match op {
             Add => self.add(),
@@ -64,12 +64,9 @@ impl Engine {
             Ne => self.ne(),
             Exch => self.exch(),
             Gt => self.gt(),
-            If => self.cond_if(),
-            IfElse => self.cond_ifelse(),
             Mod => self.modulo(),
             Mul => self.mul(),
             Pop => self.pop(),
-            Repeat => self.repeat(),
             Roll => self.roll(),
             Sub => self.sub(),
             Load => self.load(),
@@ -77,6 +74,9 @@ impl Engine {
             ClearToMark => self.clear_to_mark(),
             CountToMark => self.count_to_mark(),
             EndArray => self.endarray(),
+            Repeat => self.repeat(),
+            If => self.cond_if(),
+            IfElse => self.cond_ifelse(),
         }
     }
 
@@ -470,7 +470,7 @@ impl Engine {
             (Some(Object::Array(Executable, p)), Some(Object::Integer(i))) => {
                 if i > 1 {
                     self.exec_stack
-                        .push(Object::Operator(Executable, Op::Repeat));
+                        .push(Object::Operator(Executable, Operator::Repeat));
                     self.exec_stack.push(Object::Array(Executable, p.clone()));
                     self.exec_stack.push(Object::Integer(i - 1));
                 }

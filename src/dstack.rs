@@ -1,5 +1,5 @@
 use crate::ObjectMode::*;
-use crate::{Object, Op::*};
+use crate::{Object, Operator::*};
 use std::collections::HashMap;
 
 pub struct DictStack {

@@ -1,11 +1,4 @@
-use crate::Op;
 use std::fmt::Display;
-
-#[derive(Debug, Clone)]
-pub enum ObjectMode {
-    Literal,
-    Executable,
-}
 
 #[derive(Debug, Clone)]
 pub enum Object {
@@ -15,9 +8,45 @@ pub enum Object {
     Mark,
     Array(ObjectMode, Vec<Object>),
     Name(ObjectMode, String),
-    Operator(ObjectMode, Op),
+    Operator(ObjectMode, Operator),
     String(ObjectMode, String),
     File(ObjectMode, String),
+}
+
+#[derive(Debug, Clone)]
+pub enum ObjectMode {
+    Literal,
+    Executable,
+}
+
+#[derive(Clone, Debug)]
+pub enum Operator {
+    Add,
+    Load,
+    Clear,
+    Copy,
+    Index,
+    Def,
+    Div,
+    Exec,
+    PopAndPrint, // ==
+    Dup,
+    Eq,
+    Ne,
+    Exch,
+    Gt,
+    If,
+    IfElse,
+    Mod,
+    Mul,
+    Pop,
+    Repeat,
+    Roll,
+    Sub,
+    EndArray, // ]
+    Pstack,
+    ClearToMark,
+    CountToMark,
 }
 
 impl Display for Object {
@@ -38,6 +67,39 @@ impl Display for Object {
                 }
                 write!(f, "]")
             }
+        }
+    }
+}
+
+impl Display for Operator {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Operator::Add => write!(f, "--add--"),
+            Operator::Load => write!(f, "--add--"),
+            Operator::Clear => write!(f, "--clear--"),
+            Operator::Copy => write!(f, "--copy--"),
+            Operator::Index => write!(f, "--index--"),
+            Operator::Def => write!(f, "--def--"),
+            Operator::Div => write!(f, "--div--"),
+            Operator::Exec => write!(f, "--exec--"),
+            Operator::PopAndPrint => write!(f, "--=--"),
+            Operator::Dup => write!(f, "--dup--"),
+            Operator::Eq => write!(f, "--eq--"),
+            Operator::Ne => write!(f, "--ne--"),
+            Operator::Exch => write!(f, "--exch--"),
+            Operator::Gt => write!(f, "--gt--"),
+            Operator::If => write!(f, "--if--"),
+            Operator::IfElse => write!(f, "--ifElse--"),
+            Operator::Mod => write!(f, "--mod--"),
+            Operator::Mul => write!(f, "--mul--"),
+            Operator::Pop => write!(f, "--pop--"),
+            Operator::Repeat => write!(f, "--repeat--"),
+            Operator::Roll => write!(f, "--roll--"),
+            Operator::Sub => write!(f, "--sub--"),
+            Operator::EndArray => write!(f, "--]--"),
+            Operator::Pstack => write!(f, "--pstack--"),
+            Operator::ClearToMark => write!(f, "--cleartomark--"),
+            Operator::CountToMark => write!(f, "--counttomark--"),
         }
     }
 }
