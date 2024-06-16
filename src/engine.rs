@@ -8,6 +8,8 @@ use crate::Operator;
 
 use std::cmp::Ordering;
 
+use log::debug;
+
 pub struct Engine {
     exec_stack: ExecStack,
     dict_stack: DictStack,
@@ -34,7 +36,7 @@ impl Engine {
     }
 
     pub fn push(&mut self, object: Object) {
-        eprintln!("push {object}");
+        debug!("push {object}");
         self.main_stack.push(object)
     }
 
@@ -83,7 +85,7 @@ impl Engine {
     }
 
     pub fn process_object(&mut self, object: Object) -> Result<(), String> {
-        eprintln!("process_object: {object}");
+        debug!("process_object: {object}");
         use Object::*;
 
         match object {
@@ -418,7 +420,6 @@ impl Engine {
     }
 
     pub fn cond_if(&mut self) -> Result<(), String> {
-        eprintln!("enter cond_if");
         match (self.main_stack.pop(), self.main_stack.pop()) {
             (Some(Object::Array(Executable, p)), Some(Object::Bool(b))) => {
                 if b {

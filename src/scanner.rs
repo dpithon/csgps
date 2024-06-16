@@ -1,6 +1,7 @@
 use crate::Engine;
 use crate::ProcBuilder;
 use crate::Token;
+use log::debug;
 use logos::Logos;
 use std::fs::File;
 use std::io::prelude::*;
@@ -37,7 +38,7 @@ impl Scanner {
                         return Err("syntax error".to_string());
                     }
                     if let Some(proc) = self.proc_builder.close() {
-                        eprintln!("build proc");
+                        debug!("build proc");
                         self.engine.push(proc);
                     }
                 }
@@ -83,6 +84,7 @@ impl Scanner {
             return Err(format!("error on loading {filename}: {e}"));
         }
 
+        debug!("execute_file {filename} ");
         self.execute_string(&contents)
     }
 

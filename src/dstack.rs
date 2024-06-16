@@ -2,6 +2,8 @@ use crate::ObjectMode::*;
 use crate::{Object, Operator::*};
 use std::collections::HashMap;
 
+use log::debug;
+
 pub struct DictStack {
     stack: Vec<HashMap<String, Object>>,
 }
@@ -50,7 +52,7 @@ impl DictStack {
     }
 
     pub fn def(&mut self, key: String, val: Object) {
-        eprintln!("register {key}:{val}");
+        debug!("register {key}:{val}");
         let mut top = self.stack.pop().unwrap();
         top.insert(key, val);
         self.stack.push(top);
