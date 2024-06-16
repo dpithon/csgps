@@ -1,10 +1,10 @@
-use csgsl::Engine;
+use csgsl::Scanner;
 use std::env;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
     let mut interactive = false;
-    let mut engine = Engine::new();
+    let mut scanner = Scanner::new();
 
     for filename in args[1..].iter() {
         if filename == "-i" {
@@ -12,14 +12,14 @@ fn main() {
             continue;
         }
 
-        if let Err(e) = engine.execute_file(filename) {
+        if let Err(e) = scanner.execute_file(filename) {
             println!("Error in {filename}: {e}");
             return;
         }
     }
 
     if interactive {
-        engine.enter_repl();
+        scanner.enter_repl();
     }
     println!("bye.");
 }

@@ -3,13 +3,15 @@ mod engine;
 mod object;
 mod operator;
 mod proc_builder;
+mod scanner;
 mod token;
 mod xstack;
 
 pub use dstack::DictStack;
 pub use engine::Engine;
-pub use object::{ObjectMode, Object};
+pub use object::{Object, ObjectMode};
 pub use operator::Op;
 pub use proc_builder::ProcBuilder;
+pub use scanner::Scanner;
 pub use token::Token;
 pub use xstack::ExecStack;

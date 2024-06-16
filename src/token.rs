@@ -1,3 +1,5 @@
+use crate::Object;
+use crate::ObjectMode::*;
 use logos::Logos;
 
 #[derive(Logos, Debug, PartialEq, Clone)]
@@ -30,4 +32,18 @@ pub enum Token {
     #[token(r"==", |lex| lex.slice().to_owned())]
     #[regex(r"\]|>>", |lex| lex.slice().to_owned())]
     ExeName(String),
+}
+
+impl Token {
+    pub fn to_object(&self) -> Object {
+        match self {
+            Token::Bool(b) => Object::Bool(*b),
+            Token::Real(r) => Object::Real(*r),
+            Token::Integer(i) => Object::Integer(*i),
+            Token::Mark => Object::Mark,
+            Token::ExeName(n) => Object::Name(Executable, n.clone()),
+            Token::LitName(n) => Object::Name(Literal, n.clone()),
+            _ => panic!("Token not expected {:?}", self),
+        }
+    }
 }

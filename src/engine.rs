@@ -3,13 +3,6 @@ use crate::ExecStack;
 use crate::Object;
 use crate::ObjectMode::*;
 use crate::Op;
-use crate::ProcBuilder;
-use crate::Token;
-
-use logos::Logos;
-
-use std::fs::File;
-use std::io::prelude::*;
 
 use std::cmp::Ordering;
 
@@ -17,7 +10,6 @@ pub struct Engine {
     exec_stack: ExecStack,
     dict_stack: DictStack,
     main_stack: Vec<Object>,
-    proc_builder: ProcBuilder,
 }
 
 impl Default for Engine {
@@ -26,7 +18,6 @@ impl Default for Engine {
             exec_stack: ExecStack::new(),
             dict_stack: DictStack::new(),
             main_stack: Vec::new(),
-            proc_builder: ProcBuilder::new(),
         }
     }
 }
@@ -40,16 +31,12 @@ impl Engine {
         self.main_stack.len()
     }
 
-    pub fn translate_to_object(&self, token: Token) -> Object {
-        match token {
-            Token::Bool(b) => Object::Bool(b),
-            Token::Real(r) => Object::Real(r),
-            Token::Integer(i) => Object::Integer(i),
-            Token::ExeName(n) => Object::Name(Executable, n),
-            Token::LitName(n) => Object::Name(Literal, n),
-            Token::Mark => Object::Mark,
-            _ => panic!("Token not expected {:?}", token),
-        }
+    pub fn push(&mut self, object: Object) {
+        self.main_stack.push(object)
+    }
+
+    pub fn get_object_by_name(&self, name: &str) -> Option<Object> {
+        self.dict_stack.get(name)
     }
 
     pub fn process_execution_stack(&mut self) -> Result<(), String> {
@@ -58,80 +45,6 @@ impl Engine {
             self.process_object(object)?;
         }
         Ok(())
-    }
-
-    pub fn execute_string(&mut self, contents: &str) -> Result<(), String> {
-        let mut lex = Token::lexer(contents);
-
-        loop {
-            self.process_execution_stack()?;
-
-            match lex.next() {
-                Some(Ok(Token::BeginProc)) => self.proc_builder.open(),
-                Some(Ok(Token::EndProc)) => {
-                    if !self.proc_builder.is_open() {
-                        return Err("syntax error".to_string());
-                    }
-                    if let Some(proc) = self.proc_builder.close() {
-                        self.main_stack.push(proc);
-                    }
-                }
-                Some(Ok(Token::ImmName(name))) => {
-                    let response = self.dict_stack.get(&name);
-                    match response {
-                        Some(object) => {
-                            if self.proc_builder.is_open() {
-                                self.proc_builder.push(object);
-                            } else {
-                                self.main_stack.push(object);
-                            }
-                        }
-                        None => {
-                            todo!("undefined error")
-                        }
-                    }
-                }
-                Some(Ok(token)) => {
-                    let object = self.translate_to_object(token);
-                    if self.proc_builder.is_open() {
-                        self.proc_builder.push(object);
-                    } else {
-                        self.process_object(object)?;
-                    }
-                }
-                Some(Err(_)) => return Err(format!("parse error: {}", lex.slice())),
-                None => return Ok(()),
-            };
-        }
-    }
-
-    pub fn execute_file(&mut self, filename: &str) -> Result<(), String> {
-        let mut file = match File::open(filename) {
-            Err(e) => return Err(format!("error on opening {filename}: {e}")),
-            Ok(file) => file,
-        };
-
-        let mut contents = String::new();
-        if let Err(e) = file.read_to_string(&mut contents) {
-            return Err(format!("error on loading {filename}: {e}"));
-        }
-
-        self.execute_string(&contents)
-    }
-
-    pub fn enter_repl(&mut self) {
-        let mut rl = rustyline::DefaultEditor::new().unwrap();
-        loop {
-            let readline = rl.readline(&format!("csg-PS [{}]> ", self.get_stack_size()));
-            match readline {
-                Ok(line) => {
-                    if let Err(e) = self.execute_string(&line) {
-                        println!("Error : {e}");
-                    }
-                }
-                Err(_) => break,
-            };
-        }
     }
 
     pub fn run_operator(&mut self, op: Op) -> Result<(), String> {
@@ -178,27 +91,24 @@ impl Engine {
                             for proc_object in proc.iter().rev() {
                                 self.exec_stack.push(proc_object.clone()); // TODO: New Proc Struct
                             }
-                            Ok(())
                         }
                         Operator(Executable, op) => {
                             self.run_operator(op)?;
-                            Ok(())
                         }
                         other => {
                             self.exec_stack.push(other);
-                            Ok(())
                         }
                     }
                 } else {
-                    Err(format!("ExeName '{name}' not found"))
+                    return Err(format!("ExeName '{name}' not found"));
                 }
             }
-            Operator(Executable, op) => self.run_operator(op),
+            Operator(Executable, op) => self.run_operator(op)?,
             other => {
                 self.main_stack.push(other.clone());
-                Ok(())
             }
-        }
+        };
+        Ok(())
     }
 
     pub fn add(&mut self) -> Result<(), String> {
