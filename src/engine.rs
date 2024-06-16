@@ -426,10 +426,7 @@ impl Engine {
                 }
                 Ok(())
             }
-            (Some(a), Some(b)) => Err(format!(
-                "'if' wrong argument types {:?} {:?} {}",
-                a, b, self.exec_stack
-            )),
+            (Some(a), Some(b)) => Err(format!("'if' wrong argument types {:?} {:?}", a, b)),
             (None, _) | (_, None) => Err("'if' stack underflow".to_string()),
         }
     }
