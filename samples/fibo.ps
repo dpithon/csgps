@@ -1,0 +1,14 @@
+% Missing operators lt and neg
+/lt { 2 copy  eq { false } { gt { false } { true } ifelse } ifelse } def
+/neg { -1 mul } def
+
+/fib {dup 1 gt
+        {1 sub dup 1 sub fib exch fib add
+        } if
+     } def
+
+% The word f takes care of the negative arguments and calls fib
+/f {dup 0 lt
+        {dup neg fib exch 2 mod 0 eq {neg} if}
+        {fib} ifelse
+   } def

@@ -1,4 +1,4 @@
-use csgsl::Scanner;
+use csgps::Scanner;
 use std::env;
 
 use log::debug;
